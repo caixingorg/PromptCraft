@@ -13,11 +13,42 @@ const sharedProviderConfig = fs.readFileSync(path.join(ROOT_DIR, "shared", "prov
 const sharedConfigUtils = fs.readFileSync(path.join(ROOT_DIR, "shared", "config-utils.js"), "utf8");
 const readme = fs.readFileSync(path.join(ROOT_DIR, "README.md"), "utf8");
 
+function read(relativePath) {
+  return fs.readFileSync(path.join(ROOT_DIR, relativePath), "utf8");
+}
+
 test("model field explicitly supports manual input", () => {
-  assert.match(popupHtml, /<span class="field-label">模型（可手动输入）<\/span>/);
+  assert.match(popupHtml, /Model \(manual input supported\)/);
   assert.match(popupHtml, /<input id="modelInput" list="modelPresetList"/);
-  assert.match(popupHtml, /预设模型可能随厂商更新/);
-  assert.match(popupJs, /若调用失败请填写厂商后台当前模型 ID/);
+  assert.match(popupHtml, /Model presets may change/);
+  assert.match(popupJs, /getMessage\("modelHint"\)/);
+});
+
+test("shared messages and optimization goals are registered", () => {
+  const sharedMessages = read("shared/messages.js");
+  const sharedOptimizationGoals = read("shared/optimization-goals.js");
+
+  assert.match(sharedMessages, /AIPO_setLocale/);
+  assert.match(sharedMessages, /AIPO_getLocale/);
+  assert.match(sharedMessages, /languageLabel/);
+  assert.match(sharedMessages, /Optimize Prompt/);
+  assert.match(sharedMessages, /Replace Original/);
+  assert.match(sharedMessages, /Retry/);
+  assert.match(sharedOptimizationGoals, /better-ask/);
+  assert.match(sharedOptimizationGoals, /writing-polish/);
+  assert.match(sharedOptimizationGoals, /work-plan/);
+  assert.match(sharedOptimizationGoals, /research/);
+  assert.match(sharedConfigUtils, /optimizationGoal/);
+  assert.match(sharedConfigUtils, /language/);
+});
+
+test("built-in optimization templates target AI web chat prompts, not fiction writing", () => {
+  const sharedOptimizationGoals = read("shared/optimization-goals.js");
+
+  assert.match(sharedOptimizationGoals, /prompt optimizer/);
+  assert.match(sharedOptimizationGoals, /Return only the rewritten prompt/);
+  assert.match(sharedOptimizationGoals, /Do not add fiction, roleplay, or storytelling unless the user explicitly asks/);
+  assert.doesNotMatch(sharedOptimizationGoals, /character arc|plot twist|worldbuilding|protagonist|chapter outline|narrative voice/i);
 });
 
 test("provider defaults and presets use updated editable model IDs", () => {
@@ -40,6 +71,7 @@ test("provider defaults and presets use updated editable model IDs", () => {
 
   assert.match(backgroundJs, /const AIPO_PROVIDER_REGISTRY = globalThis\.AIPO_PROVIDER_REGISTRY/);
   assert.match(popupJs, /globalThis\.AIPO_PROVIDER_REGISTRY/);
+  assert.match(sharedProviderConfig, /label: "Qwen \(Tongyi\)"/);
   assert.match(sharedProviderConfig, /defaultModel: "gpt-5\.1-mini"/);
   assert.match(sharedProviderConfig, /defaultModel: "deepseek-v4-flash"/);
   assert.match(sharedProviderConfig, /defaultModel: "qwen3-next-80b-a3b-instruct"/);
@@ -62,7 +94,7 @@ test("API Key field has show/hide toggle button", () => {
 test("test connection button exists and does not require page content script", () => {
   assert.match(popupHtml, /id="testConnectionButton"/);
   assert.match(popupJs, /AIPO_TEST_CONNECTION/);
-  assert.match(popupJs, /测试中/);
+  assert.match(popupJs, /getMessage\("testing"\)/);
 });
 
 test("current site disable control is disabled when hostname unavailable", () => {
@@ -76,5 +108,39 @@ test("popup uses shared config-utils functions instead of local definitions", ()
 });
 
 test("popup.html loads shared config-utils.js", () => {
+  assert.match(popupHtml, /messages\.js/);
+  assert.match(popupHtml, /optimization-goals\.js/);
   assert.match(popupHtml, /config-utils\.js/);
+});
+
+test("popup exposes English optimization goal selector", () => {
+  assert.match(popupHtml, /<html lang="en">/);
+  assert.match(popupHtml, /id="optimizationGoalSelect"/);
+  assert.match(popupHtml, /Optimize for/);
+  assert.match(popupJs, /optimizationGoalSelect/);
+  assert.match(popupJs, /AIPO_OPTIMIZATION_GOALS/);
+  assert.match(popupJs, /AIPO_PROVIDER_REGISTRY/);
+});
+
+test("popup exposes persisted language toggle and applies localized labels", () => {
+  assert.match(popupHtml, /id="languageToggleButton"/);
+  assert.doesNotMatch(popupHtml, /id="languageSelect"/);
+  assert.match(popupHtml, /class="header-actions"/);
+  assert.match(popupJs, /languageToggleButton/);
+  assert.match(popupJs, /globalThis\.AIPO_setLocale/);
+  assert.match(popupJs, /applyLocalizedLabels/);
+  assert.match(popupJs, /activeLanguage === "zh" \? "en" : "zh"/);
+  assert.match(popupJs, /language: activeLanguage/);
+  assert.match(popupJs, /notifyActiveTab/);
+});
+
+test("popup previews built-in goal templates and only lets custom template edit", () => {
+  assert.match(popupHtml, /id="promptTemplateHint"/);
+  assert.match(popupJs, /customPromptTemplateDraft/);
+  assert.match(popupJs, /rememberCustomTemplateDraft/);
+  assert.match(popupJs, /renderPromptTemplateField/);
+  assert.match(popupJs, /getBuiltInGoalTemplate/);
+  assert.match(popupJs, /promptTemplateInput\.readOnly = !isCustom/);
+  assert.match(popupJs, /resetTemplateButton\.disabled = !isCustom/);
+  assert.match(popupJs, /optimizationGoal === "custom"/);
 });

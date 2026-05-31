@@ -10,7 +10,7 @@ PromptCraft is a Manifest V3 Chrome Extension that optimizes prompt text in webp
 │                                                                      │
 │  User types text → Content Script detects input                     │
 │       ↓                                                              │
-│  Content Script shows floating "✨ 优化提示词" button                │
+│  Content Script shows floating "✨ Optimize Prompt" button             │
 │       ↓                                                              │
 │  User clicks button → Content Script reads input text                │
 │       ↓                                                              │
@@ -29,11 +29,15 @@ PromptCraft is a Manifest V3 Chrome Extension that optimizes prompt text in webp
 │  │  6. Return { ok: true, optimizedPrompt }                      │    │
 │  └─────────────────────────────────────────────────────────────┘    │
 │       ↓                                                              │
-│  Content Script receives response → writes text back to input        │
+│  Content Script receives response → opens review panel               │
 │       ↓                                                              │
-│  Input field updated with optimized prompt                           │
+│  User chooses Replace Original / Copy / Retry / Close                │
 └─────────────────────────────────────────────────────────────────────┘
 ```
+
+## Review Panel Flow
+
+The content script opens a centered before/after review panel immediately after the user clicks **Optimize Prompt**. While the background request is running, the panel shows a loading state. When the optimized prompt returns, the panel shows the original and optimized prompt. The input field is updated only after the user clicks **Replace Original**.
 
 ## Message Types
 
@@ -63,13 +67,15 @@ The Content Script runs in the web page context with `<all_urls>` permissions bu
 | File | Role | Key Responsibilities |
 | --- | --- | --- |
 | `manifest.json` | Extension manifest | Declares permissions, content scripts, background worker, host permissions |
-| `background/background.js` | Service Worker | Reads config from storage, calls Provider APIs (OpenAI-compatible & Anthropic Messages), returns optimized text |
-| `content/content.js` | Content Script | Injects into all pages, detects input fields, shows floating button, reads/writes input text, communicates with background |
+| `background/background.js` | Service Worker | Reads config from storage, resolves optimization goal templates, calls Provider APIs, returns optimized text |
+| `content/content.js` | Content Script | Injects into all pages, detects input fields, shows floating button, opens review panel, writes back only after confirmation |
 | `content/content.css` | Button styles | Styles for the floating optimize button (injected into page) |
 | `popup/popup.html` | Popup UI | Settings form: provider selection, API key, model, prompt template |
 | `popup/popup.js` | Popup logic | Form handling, saves/loads config from storage, sends refresh messages to content script, test connection |
 | `popup/popup.css` | Popup styles | Styles for the popup panel |
+| `shared/messages.js` | Message registry | Defines English-first UI and error messages via `AIPO_getMessage()` |
 | `shared/provider-config.js` | Provider registry | Defines `AIPO_PROVIDER_REGISTRY` — all six providers with endpoints, adapters, default models, key placeholders |
+| `shared/optimization-goals.js` | Goal templates | Defines Better Ask, Writing & Communication, Work Plan, and Research prompt templates |
 | `shared/config-utils.js` | Config normalization | `normalizeConfig()`, `normalizeHostnames()`, `createDefaultProvidersConfig()`, `cloneProviders()` — shared between background and popup |
 | `scripts/pack-extension.js` | Build script | Copies only release files to `dist/` and creates the extension zip |
 | `tests/` | Contract tests | Tests for content button contract, popup config, provider adapters, open-source integrity |
@@ -80,7 +86,7 @@ The extension supports two API formats:
 
 ### `openai-compatible` (default)
 
-Used by: OpenAI, Google Gemini, DeepSeek, 通义千问 (Qwen/DashScope), Kimi
+Used by: OpenAI, Google Gemini, DeepSeek, Qwen (Tongyi), Kimi
 
 All follow the OpenAI Chat Completions API format:
 
@@ -112,6 +118,14 @@ Response: { content: [{ type: "text", text: "..." }] }
 
 Provider registry loaded as a global (`globalThis.AIPO_PROVIDER_REGISTRY`). Defines each provider's label, adapter type, endpoint, default model, available models, key placeholder format, temperature, max tokens, and deprecated model list. This is imported by `background.js` and `popup.js` via `<script>` tags or `importScripts()`.
 
+### `shared/messages.js`
+
+English-first message registry loaded as `globalThis.AIPO_getMessage`. It keeps popup labels, content-script toasts, review-panel controls, and background error strings consistent.
+
+### `shared/optimization-goals.js`
+
+Optimization goal registry loaded as `globalThis.AIPO_OPTIMIZATION_GOALS`. Built-in goals include Better Ask, Writing & Communication, Work Plan, and Research. The `custom` goal is handled by config normalization and uses the user's saved `promptTemplate`.
+
 ### `shared/config-utils.js`
 
 Configuration normalization utilities loaded as globals. Provides:
@@ -129,7 +143,7 @@ These are used by both `background.js` (via `importScripts`) and `popup.js` (via
 2. **Discovery**: `MutationObserver` watches for DOM changes; `focusin` listener catches newly focused inputs; regular scanning with debounce
 3. **Binding**: Each supported input gets a floated button (`position: fixed`), tracked in a `Map<Element, {button}>`
 4. **Positioning**: Button position calculated from input's bounding rect; updated on scroll, resize, and DOM mutations
-5. **Optimization**: Click → read input value → `chrome.runtime.sendMessage("AIPO_OPTIMIZE_PROMPT")` → write response back to input
+5. **Optimization**: Click → read input value → open loading review panel → `chrome.runtime.sendMessage("AIPO_OPTIMIZE_PROMPT")` → render Before / After result → write response back only after user confirmation
 6. **Cleanup**: Detached inputs are cleaned up periodically; all buttons removed when floating button is disabled
 
 ## Extension Lifecycle

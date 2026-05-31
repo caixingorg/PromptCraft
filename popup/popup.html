@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -11,71 +11,73 @@
       <header class="popup-header">
         <div class="header-top">
           <h1>PromptCraft</h1>
-          <button class="primary-button" type="submit" form="settingsForm">保存配置</button>
+          <div class="header-actions">
+            <button id="languageToggleButton" class="primary-button language-toggle-button" type="button">中文</button>
+            <button class="primary-button" type="submit" form="settingsForm">Save</button>
+          </div>
         </div>
         <div class="header-switches">
           <label class="switch-row switch-row-compact">
-            <span>显示悬浮按钮</span>
+            <span>Show floating button</span>
             <input id="showFloatingButtonInput" type="checkbox" role="switch" form="settingsForm">
           </label>
-          <label id="currentSiteRow" class="switch-row switch-row-compact is-disabled" title="当前页面不支持站点级设置">
-            <span id="currentSiteHint">当前网站隐藏</span>
+          <label id="currentSiteRow" class="switch-row switch-row-compact is-disabled" title="Site-level settings unavailable on this page">
+            <span id="currentSiteHint">Hide on current site</span>
             <input id="disableCurrentSiteInput" type="checkbox" role="switch" disabled form="settingsForm">
           </label>
         </div>
       </header>
 
       <nav class="tab-bar">
-        <button class="tab-button is-active" data-tab="provider" type="button">Provider 配置</button>
-        <button class="tab-button" data-tab="template" type="button">优化模板</button>
+        <button class="tab-button is-active" data-tab="provider" type="button">Provider Config</button>
+        <button class="tab-button" data-tab="template" type="button">Optimize Template</button>
       </nav>
 
       <form id="settingsForm" class="settings-form">
         <div class="tab-content">
           <div class="tab-panel is-active" id="panel-provider">
             <label class="field">
+              <span class="field-label">Optimize for</span>
+              <select id="optimizationGoalSelect"></select>
+              <span class="field-hint">Custom template is only used when Custom Template is selected.</span>
+            </label>
+
+            <label class="field">
               <span class="field-label">Provider</span>
-              <select id="providerSelect">
-                <option value="openai">OpenAI</option>
-                <option value="anthropic">Anthropic Claude</option>
-                <option value="gemini">Google Gemini</option>
-                <option value="deepseek">DeepSeek</option>
-                <option value="qwen">通义千问</option>
-                <option value="kimi">Kimi</option>
-              </select>
+              <select id="providerSelect"></select>
             </label>
 
             <label class="field">
               <span id="apiKeyLabel" class="field-label">OpenAI API Key</span>
               <div class="api-key-row">
                 <input id="apiKeyInput" type="password" autocomplete="off" placeholder="sk-..." spellcheck="false">
-                <button id="toggleApiKeyButton" class="icon-button" type="button" aria-label="显示 API Key" title="显示 API Key">👁</button>
+                <button id="toggleApiKeyButton" class="icon-button" type="button" aria-label="Show API Key" title="Show API Key">👁</button>
               </div>
-              <span id="apiKeyHint" class="field-hint">API Key 仅存储在本地浏览器中，只会用于调用当前选择的 Provider。</span>
+              <span id="apiKeyHint" class="field-hint">API Key is stored locally. Only sent to the selected provider.</span>
             </label>
 
             <label class="field">
-              <span class="field-label">模型（可手动输入）</span>
+              <span class="field-label">Model (manual input supported)</span>
               <input id="modelInput" list="modelPresetList" autocomplete="off" spellcheck="false">
               <datalist id="modelPresetList"></datalist>
-              <span id="modelHint" class="field-hint">预设模型可能随厂商更新，若调用失败请填写厂商后台当前模型 ID。</span>
+              <span id="modelHint" class="field-hint">Model presets may change. Enter a valid model ID if the call fails.</span>
             </label>
 
             <div class="actions test-actions">
-              <button id="testConnectionButton" class="secondary-button" type="button">测试连接</button>
+              <button id="testConnectionButton" class="secondary-button" type="button">Test Connection</button>
               <span id="testConnectionStatus" class="test-status"></span>
             </div>
           </div>
 
           <div class="tab-panel" id="panel-template">
             <label class="field">
-              <span class="field-label">Prompt 优化模板</span>
+              <span class="field-label">Prompt Optimization Template</span>
               <textarea id="promptTemplateInput" rows="12" spellcheck="false"></textarea>
-              <span class="field-hint">模板必须包含变量：{原始提示词内容}</span>
+              <span id="promptTemplateHint" class="field-hint">Template must include {originalPrompt} or {原始提示词内容}.</span>
             </label>
 
             <div class="actions">
-              <button id="resetTemplateButton" class="secondary-button" type="button">恢复模板</button>
+              <button id="resetTemplateButton" class="secondary-button" type="button">Reset Template</button>
             </div>
           </div>
         </div>
@@ -84,7 +86,9 @@
       <p id="statusText" class="status-text" aria-live="polite"></p>
     </main>
 
+    <script src="../shared/messages.js"></script>
     <script src="../shared/provider-config.js"></script>
+    <script src="../shared/optimization-goals.js"></script>
     <script src="../shared/config-utils.js"></script>
     <script src="popup.js"></script>
   </body>

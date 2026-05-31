@@ -11,10 +11,10 @@ const contentCss = fs.readFileSync(path.join(ROOT_DIR, "content", "content.css")
 const sharedConfigUtils = fs.readFileSync(path.join(ROOT_DIR, "shared", "config-utils.js"), "utf8");
 
 test("floating button uses compact icon text labels", () => {
-  assert.match(contentJs, /const AIPO_BUTTON_LABEL = "✨ 优化提示词"/);
-  assert.match(contentJs, /const AIPO_BUTTON_LOADING_LABEL = "优化中\.\.\."/);
-  assert.match(contentJs, /button\.textContent = AIPO_BUTTON_LABEL/);
-  assert.match(contentJs, /loading \? AIPO_BUTTON_LOADING_LABEL : AIPO_BUTTON_LABEL/);
+  assert.match(contentJs, /button\.textContent = getMessage\("optimizeButton"\)/);
+  assert.match(contentJs, /loading \? getMessage\("optimizing"\) : getMessage\("optimizeButton"\)/);
+  assert.match(contentJs, /globalThis\.AIPO_setLocale\(config\.language \|\| "en"\)/);
+  assert.match(contentJs, /refreshButtonLabels/);
 });
 
 test("floating button CSS is a lightweight pill", () => {
@@ -95,8 +95,30 @@ test("prompt-like detection includes name, id, aria-describedby attributes", () 
 
 test("error messages distinguish between key missing, provider error, network error, and background unavailable", () => {
   assert.match(contentJs, /API Key|apiKey/);
-  assert.match(contentJs, /网络请求失败/);
-  assert.match(contentJs, /刷新页面|重新加载扩展|扩展后台未响应/);
+  assert.match(contentJs, /networkError/);
+  assert.match(contentJs, /backgroundUnavailable/);
+});
+
+test("optimization result opens review panel instead of direct write", () => {
+  assert.match(contentJs, /AIPO_REVIEW_PANEL_CLASS/);
+  assert.match(contentJs, /showReviewPanel/);
+  assert.match(contentJs, /updateReviewPanel/);
+  assert.match(contentJs, /reviewRequestId/);
+  assert.match(contentJs, /isActiveReviewRequest/);
+  assert.match(contentJs, /getMessage\("replaceOriginal"\)/);
+  assert.match(contentJs, /getMessage\("retry"\)/);
+  assert.match(contentJs, /navigator\.clipboard|document\.execCommand/);
+  assert.match(contentJs, /keydown/);
+  assert.match(contentJs, /Escape/);
+  assert.match(contentJs, /role", "dialog"/);
+  assert.match(contentJs, /tabIndex = -1/);
+  assert.doesNotMatch(contentJs, /writeEditableValue\(editableElement, response\.optimizedPrompt\)/);
+});
+
+test("review panel CSS defines modal shell and actions", () => {
+  assert.match(contentCss, /\.aipo-review-panel-backdrop/);
+  assert.match(contentCss, /\.aipo-review-panel/);
+  assert.match(contentCss, /\.aipo-review-panel-actions/);
 });
 
 test("shared config-utils.js exposes normalization functions", () => {

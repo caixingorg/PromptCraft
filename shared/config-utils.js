@@ -7,20 +7,51 @@
 
   globalThis.AIPO_DEFAULT_CONFIG = {
     selectedProvider: "openai",
+    optimizationGoal: "better-ask",
+    language: "en",
     providers: createDefaultProvidersConfig(),
     disabledHostnames: [],
     showFloatingButton: true,
     promptTemplate:
-      "你是专业的提示词工程师，擅长优化大模型提示词。请基于用户原始内容，按照以下规则优化：\n\n" +
-      "1. 梳理语义，补全缺失的角色、场景、任务目标和关键要求；\n" +
-      "2. 重组结构，明确身份、任务、输入背景、输出格式、限制条件和细节要求；\n" +
-      "3. 优化表达，去除冗余口语，使语言精炼、逻辑清晰、可执行性强；\n" +
-      "4. 保留用户原本的全部核心意图，不篡改、不扩写无关需求；\n" +
-      "5. 如果原始提示词信息不足，只能基于已有信息合理补全，不要虚构关键事实；\n" +
-      "6. 输出仅返回【优化后的完整提示词】，不要添加解释、开场白、总结或 Markdown 代码块。\n\n" +
-      "用户原始提示词：\n" +
-      "{原始提示词内容}"
+      "Rewrite the user's prompt so it becomes clearer, more specific, and easier for an AI assistant to answer well.\n\n" +
+      "Rules:\n" +
+      "1. Preserve the user's original intent.\n" +
+      "2. Add useful context, structure, constraints, and output expectations when they are implied.\n" +
+      "3. Do not invent critical facts.\n" +
+      "4. Return only the improved prompt.\n\n" +
+      "Original prompt:\n" +
+      "{originalPrompt}"
   };
+
+  function getOptimizationGoals() {
+    return globalThis.AIPO_OPTIMIZATION_GOALS && typeof globalThis.AIPO_OPTIMIZATION_GOALS === "object"
+      ? globalThis.AIPO_OPTIMIZATION_GOALS
+      : {};
+  }
+
+  function hasSavedCustomTemplate(source) {
+    return typeof source.promptTemplate === "string" &&
+      source.promptTemplate.trim() &&
+      source.promptTemplate !== globalThis.AIPO_DEFAULT_CONFIG.promptTemplate;
+  }
+
+  function normalizeOptimizationGoal(source) {
+    const goals = getOptimizationGoals();
+    if (source.optimizationGoal === "custom") {
+      return "custom";
+    }
+    if (typeof source.optimizationGoal === "string" && goals[source.optimizationGoal]) {
+      return source.optimizationGoal;
+    }
+    if (!source.optimizationGoal && hasSavedCustomTemplate(source)) {
+      return "custom";
+    }
+    return "better-ask";
+  }
+
+  function normalizeLanguage(language) {
+    return language === "zh" ? "zh" : "en";
+  }
 
   function normalizeConfig(config) {
     const source = config && typeof config === "object" ? config : {};
@@ -47,6 +78,8 @@
 
     return {
       selectedProvider: AIPO_PROVIDER_REGISTRY[source.selectedProvider] ? source.selectedProvider : "openai",
+      optimizationGoal: normalizeOptimizationGoal(source),
+      language: normalizeLanguage(source.language),
       providers,
       disabledHostnames: normalizeHostnames(source.disabledHostnames),
       showFloatingButton: source.showFloatingButton !== false,

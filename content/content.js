@@ -2,6 +2,7 @@
   "use strict";
 
   const AIPO_DEFAULT_CONFIG = {
+    language: "en",
     showFloatingButton: true,
     disabledHostnames: []
   };
@@ -9,11 +10,10 @@
   const AIPO_BUTTON_CLASS = "aipo-prompt-button";
   const AIPO_LOADING_CLASS = "aipo-prompt-button-loading";
   const AIPO_HIDDEN_CLASS = "aipo-prompt-button-hidden";
+  const AIPO_REVIEW_PANEL_CLASS = "aipo-review-panel";
   const AIPO_BOUND_ATTRIBUTE = "data-aipo-bound";
   const AIPO_SCAN_DEBOUNCE_MS = 180;
   const AIPO_STYLE_ID = "aipo-runtime-styles-v2";
-  const AIPO_BUTTON_LABEL = "✨ 优化提示词";
-  const AIPO_BUTTON_LOADING_LABEL = "优化中...";
 
   const boundInputs = new Map();
   let showFloatingButton = true;
@@ -21,6 +21,12 @@
   let toastTimer = 0;
   let resizeObserver = null;
   let disabledHostnames = [];
+  let currentReviewPanel = null;
+  let currentReviewRequestId = 0;
+
+  function getMessage(key) {
+    return typeof globalThis.AIPO_getMessage === "function" ? globalThis.AIPO_getMessage(key) : key;
+  }
 
   injectRuntimeStyles();
 
@@ -31,7 +37,7 @@
   });
 
   chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName !== "local" || (!changes.showFloatingButton && !changes.disabledHostnames)) {
+    if (areaName !== "local" || (!changes.showFloatingButton && !changes.disabledHostnames && !changes.language)) {
       return;
     }
 
@@ -67,8 +73,18 @@
 
   async function loadContentSettings() {
     const config = await getLocalStorage(AIPO_DEFAULT_CONFIG).catch(() => AIPO_DEFAULT_CONFIG);
+    globalThis.AIPO_setLocale(config.language || "en");
     showFloatingButton = config.showFloatingButton !== false;
     disabledHostnames = normalizeHostnames(config.disabledHostnames);
+    refreshButtonLabels();
+  }
+
+  function refreshButtonLabels() {
+    boundInputs.forEach(({ button, loading }) => {
+      setButtonLoading(button, Boolean(loading));
+      button.title = getMessage("optimizeButton");
+      button.setAttribute("aria-label", getMessage("optimizeButton"));
+    });
   }
 
   function isButtonEnabledOnCurrentPage() {
@@ -201,9 +217,9 @@
     const button = document.createElement("button");
     button.type = "button";
     button.className = AIPO_BUTTON_CLASS;
-    button.textContent = AIPO_BUTTON_LABEL;
-    button.title = "优化 Prompt";
-    button.setAttribute("aria-label", "优化 Prompt");
+    button.textContent = getMessage("optimizeButton");
+    button.title = getMessage("optimizeButton");
+    button.setAttribute("aria-label", getMessage("optimizeButton"));
 
     button.addEventListener("mousedown", (event) => {
       event.preventDefault();
@@ -305,7 +321,7 @@
     const rawPrompt = readEditableValue(editableElement).trim();
 
     if (!rawPrompt) {
-      showToast("请输入需要优化的 Prompt");
+      showToast(getMessage("emptyPrompt"));
       return;
     }
 
@@ -313,6 +329,14 @@
       entry.loading = true;
     }
     setButtonLoading(button, true);
+    const reviewRequestId = nextReviewRequestId();
+    const reviewState = showReviewPanel({
+      editableElement,
+      button,
+      originalPrompt: rawPrompt,
+      requestId: reviewRequestId,
+      loading: true
+    });
 
     try {
       const response = await sendRuntimeMessage({
@@ -321,24 +345,34 @@
       });
 
       if (!response || !response.ok) {
-        const errorMsg = (response && response.error) || "优化失败，请稍后重试";
+        const errorMsg = (response && response.error) || getMessage("optimizeFailed");
         throw new Error(errorMsg);
       }
 
-      writeEditableValue(editableElement, response.optimizedPrompt);
-      showToast("Prompt 已优化并回填");
+      if (!isActiveReviewRequest(reviewState, reviewRequestId)) {
+        return;
+      }
+      updateReviewPanel(reviewState, {
+        originalPrompt: rawPrompt,
+        optimizedPrompt: response.optimizedPrompt
+      });
+      showToast(getMessage("promptReady"));
     } catch (error) {
+      if (!isActiveReviewRequest(reviewState, reviewRequestId)) {
+        return;
+      }
+      closeReviewPanel(reviewState);
       const msg = error.message || "";
       if (/API[ _]Key|apiKey/i.test(msg)) {
-        showToast("请先在插件设置中填写 API Key");
+        showToast(getMessage("configRequired"));
       } else if (/弃用|deprecated/i.test(msg)) {
         showToast(msg);
       } else if (/Could not establish connection|Extension context invalidated|receiving end|The message port closed/i.test(msg)) {
-        showToast("扩展后台未响应，请刷新页面或重新加载扩展");
+        showToast(getMessage("backgroundUnavailable"));
       } else if (/fetch|网络|Network/i.test(msg)) {
-        showToast("网络请求失败，请检查网络连接");
+        showToast(getMessage("networkError"));
       } else {
-        showToast(msg || "优化失败，请稍后重试");
+        showToast(msg || getMessage("optimizeFailed"));
       }
     } finally {
       if (entry) {
@@ -407,6 +441,167 @@
     }
 
     element.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  function nextReviewRequestId() {
+    currentReviewRequestId += 1;
+    return currentReviewRequestId;
+  }
+
+  function isActiveReviewRequest(state, reviewRequestId) {
+    return state && currentReviewPanel === state && currentReviewRequestId === reviewRequestId;
+  }
+
+  function showReviewPanel(options) {
+    closeReviewPanel(currentReviewPanel);
+
+    const backdrop = document.createElement("div");
+    backdrop.className = "aipo-review-panel-backdrop";
+    backdrop.setAttribute("role", "dialog");
+    backdrop.setAttribute("aria-label", "Prompt review panel");
+
+    const panel = document.createElement("div");
+    panel.className = AIPO_REVIEW_PANEL_CLASS;
+    panel.tabIndex = -1;
+
+    const header = document.createElement("div");
+    header.className = "aipo-review-panel-header";
+    header.textContent = "PromptCraft";
+
+    const body = document.createElement("div");
+    body.className = "aipo-review-panel-body";
+    renderReviewLoading(body);
+
+    const actions = document.createElement("div");
+    actions.className = "aipo-review-panel-actions";
+    actions.appendChild(buildReviewAction(getMessage("close"), "", () => closeReviewPanel(state)));
+
+    panel.appendChild(header);
+    panel.appendChild(body);
+    panel.appendChild(actions);
+    backdrop.appendChild(panel);
+
+    backdrop.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        closeReviewPanel(state);
+      }
+    });
+    backdrop.addEventListener("click", (event) => {
+      if (event.target === backdrop) {
+        closeReviewPanel(state);
+      }
+    });
+
+    document.body.appendChild(backdrop);
+
+    const state = {
+      backdrop,
+      panel,
+      editableElement: options.editableElement,
+      button: options.button,
+      originalPrompt: options.originalPrompt,
+      optimizedPrompt: options.optimizedPrompt || "",
+      requestId: options.requestId
+    };
+    currentReviewPanel = state;
+    panel.focus();
+    return state;
+  }
+
+  function renderReviewLoading(body) {
+    body.textContent = "";
+    const loading = document.createElement("div");
+    loading.className = "aipo-review-panel-loading";
+    const spinner = document.createElement("div");
+    spinner.className = "aipo-review-panel-spinner";
+    const label = document.createElement("span");
+    label.textContent = getMessage("optimizing");
+    loading.appendChild(spinner);
+    loading.appendChild(label);
+    body.appendChild(loading);
+  }
+
+  function updateReviewPanel(state, options) {
+    if (!state || currentReviewPanel !== state) {
+      return;
+    }
+
+    state.originalPrompt = options.originalPrompt || state.originalPrompt || "";
+    state.optimizedPrompt = options.optimizedPrompt || "";
+
+    const body = state.panel.querySelector(".aipo-review-panel-body");
+    const actions = state.panel.querySelector(".aipo-review-panel-actions");
+    body.textContent = "";
+    actions.textContent = "";
+    body.appendChild(buildReviewField(getMessage("before"), state.originalPrompt));
+    body.appendChild(buildReviewField(getMessage("after"), state.optimizedPrompt));
+    actions.appendChild(buildReviewAction(getMessage("replaceOriginal"), "primary", () => {
+      writeEditableValue(state.editableElement, state.optimizedPrompt);
+      closeReviewPanel(state);
+      showToast(getMessage("promptReplaced"));
+    }));
+    actions.appendChild(buildReviewAction(getMessage("copy"), "", () => {
+      copyToClipboard(state.optimizedPrompt);
+      showToast(getMessage("copied"));
+    }));
+    actions.appendChild(buildReviewAction(getMessage("retry"), "", () => {
+      closeReviewPanel(state);
+      handleOptimizeClick(state.editableElement, state.button);
+    }));
+    actions.appendChild(buildReviewAction(getMessage("close"), "", () => closeReviewPanel(state)));
+  }
+
+  function buildReviewField(label, value) {
+    const field = document.createElement("div");
+    field.className = "aipo-review-panel-field";
+    const labelElement = document.createElement("div");
+    labelElement.className = "aipo-review-panel-field-label";
+    labelElement.textContent = label;
+    const textarea = document.createElement("textarea");
+    textarea.className = "aipo-review-panel-textarea";
+    textarea.readOnly = true;
+    textarea.value = value || "";
+    field.appendChild(labelElement);
+    field.appendChild(textarea);
+    return field;
+  }
+
+  function buildReviewAction(label, variant, onClick) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = variant ? `aipo-review-panel-btn aipo-review-panel-btn-${variant}` : "aipo-review-panel-btn";
+    button.textContent = label;
+    button.addEventListener("click", onClick);
+    return button;
+  }
+
+  function closeReviewPanel(state) {
+    if (state && state.backdrop && state.backdrop.parentNode) {
+      state.backdrop.parentNode.removeChild(state.backdrop);
+    }
+    if (currentReviewPanel === state) {
+      currentReviewPanel = null;
+    }
+  }
+
+  function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(() => undefined);
+      return;
+    }
+
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      document.execCommand("copy");
+    } catch (error) {
+      return;
+    }
+    document.body.removeChild(textarea);
   }
 
   function updateAllButtonPositions() {
@@ -593,7 +788,7 @@
 
   function setButtonLoading(button, loading) {
     button.classList.toggle(AIPO_LOADING_CLASS, loading);
-    button.textContent = loading ? AIPO_BUTTON_LOADING_LABEL : AIPO_BUTTON_LABEL;
+    button.textContent = loading ? getMessage("optimizing") : getMessage("optimizeButton");
   }
 
   function injectRuntimeStyles() {

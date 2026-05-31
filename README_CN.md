@@ -11,7 +11,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Manifest-V3-blue?logo=googlechrome" alt="Manifest V3" />
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License MIT" />
-  <img src="https://img.shields.io/badge/tests-33%20pass-brightgreen" alt="33 tests pass" />
+  <img src="https://img.shields.io/badge/tests-44%20pass-brightgreen" alt="44 tests pass" />
   <img src="https://img.shields.io/badge/providers-6-purple" alt="6 Providers" />
   <img src="https://img.shields.io/badge/sites-40%2B-orange" alt="40+ AI sites" />
   <img src="https://img.shields.io/badge/dependencies-zero-success" alt="Zero dependencies" />
@@ -35,7 +35,7 @@
 **BYOK（Bring Your Own Key）** 架构。API Key 仅存本地浏览器，不经过任何第三方服务器。零遥测、零追踪、零远程脚本。
 
 ### 🎛 六大 Provider
-OpenAI · Claude · Gemini · DeepSeek · 通义千问 · Kimi — 一个插件，覆盖主流 AI 平台。
+OpenAI · Claude · Gemini · DeepSeek · Qwen (Tongyi) · Kimi — 一个插件，覆盖主流 AI 平台。
 
 ### 🎯 精准投放
 40+ AI 站点白名单，只在 ChatGPT、Claude、Kimi 等对话平台显示按钮。博客评论区、登录表单、搜索引擎 — **绝不出现在不该出现的地方**。
@@ -43,14 +43,14 @@ OpenAI · Claude · Gemini · DeepSeek · 通义千问 · Kimi — 一个插件�
 </td>
 <td width="50%">
 
-### ⚡ 一键优化，即时回填
-点击「✨ 优化提示词」→ AI 优化 → 自动写回输入框。不过 3 秒，无需复制粘贴。
+### ⚡ 一键优化，先审后换
+点击「✨ Optimize Prompt」→ AI 优化 → Before / After 面板确认 → 你决定是否替换原文。
 
-### 🧩 完全自定义
-Prompt 优化模板自由编辑。想让 AI 怎么优化你的提示词？你说了算。
+### 🧩 目标化优化
+内置 Better Ask、Writing & Communication、Work Plan、Research 四种目标，也可继续使用 Custom Template。
 
 ### 🧪 测试即上线
-33 条自动化测试、零 LSP 错误、无第三方依赖。原生 JavaScript / HTML / CSS，代码干净如初雪。
+43 条自动化测试、零 LSP 错误、无第三方依赖。原生 JavaScript / HTML / CSS，代码干净如初雪。
 
 </td>
 </tr>
@@ -58,28 +58,49 @@ Prompt 优化模板自由编辑。想让 AI 怎么优化你的提示词？你说
 
 ---
 
+## 🧭 优化目标
+
+PromptCraft 默认面向常见网页用户场景，而不是只做单一泛化改写：
+
+| 目标 | 适合场景 |
+|------|----------|
+| **Better Ask** | 把粗略问题改写成清晰、可执行的 AI 提问 |
+| **Writing & Communication** | 邮件、帖子、报告、产品文案、文档、方案等实用非虚构写作 |
+| **Work Plan** | 把模糊工作请求整理为步骤、资源、风险和验收标准 |
+| **Research** | 结构化调研、比较、风险机会分析和结论建议 |
+| **Custom Template** | 使用你自己的固定优化规则 |
+
+---
+
+## 🪞 Before / After 审阅
+
+优化结果会先显示在 **Before / After** 面板里。你可以替换原文、复制结果、重新优化，或直接关闭，不会在未经确认时改写输入框。
+
+---
+
 ## 📸 预览
 
 ```
 ┌────────────────────────────────────┐
-│  PromptCraft        [保存] │
-│  ⬜ 显示悬浮按钮  ⬜ 当前网站隐藏   │
+│  PromptCraft        [Save] │
+│  ⬜ Show Button     ⬜ Hide on Site  │
 ├────────────────────────────────────┤
-│  [Provider 配置]  [优化模板]       │  ← Tab 切换
+│  [Provider Config]  [Optimize Tmpl] │  ← Tab 切换
 ├────────────────────────────────────┤
+│  Optimize for: [Better Ask  ▼]     │
 │  Provider: [OpenAI       ▼]        │
 │  API Key:  [sk-···] [👁]          │
-│  模型:     [gpt-5.1-mini ▼]       │
-│  [测试连接]  连接正常 ✓            │
+│  Model:    [gpt-5.1-mini ▼]       │
+│  [Test Connection] Connected ✓     │
 │                                    │
-│  或切换到「优化模板」编辑：         │
+│  Or switch to Template tab:        │
 │  ┌────────────────────────────┐   │
-│  │ 你是专业的提示词工程师···    │   │
-│  │ {原始提示词内容}            │   │
+│  │ Rewrite the user's prompt··· │   │
+│  │ {originalPrompt}            │   │
 │  └────────────────────────────┘   │
-│  [恢复模板]                        │
+│  [Reset Template]                  │
 ├────────────────────────────────────┤
-│              配置已保存 ✓          │
+│      Before / After review first    │
 └────────────────────────────────────┘
 ```
 
@@ -97,13 +118,13 @@ Prompt 优化模板自由编辑。想让 AI 怎么优化你的提示词？你说
 │              │ ◀────response─────── │  Worker      │ ◀────────────────── │              │
 │  读取输入框   │                      │  读取 Key     │                      │  返回优化文本  │
 │  显示按钮     │                      │  调用 API     │                      │              │
-│  回填结果     │   API Key 不可见     │  不写日志     │  仅用户点击后发送    │  按量计费     │
+│  Review 面板  │   API Key 不可见     │  不写日志     │  仅用户点击后发送    │  按量计费     │
 └─────────────┘                      └─────────────┘                      └──────────────┘
       │
       │  storage.onChanged
       ▼
 ┌─────────────┐
-│  Popup       │  ← 配置面板：Provider / API Key / 模型 / 模板 / 开关
+│  Popup       │  ← 配置面板：Goal / Provider / API Key / 模型 / 模板 / 开关
 │  Panel       │
 └─────────────┘
 ```
@@ -118,7 +139,7 @@ git clone https://github.com/your-username/ai-prompt-optimizer.git
 cd ai-prompt-optimizer
 
 # 2. 验证
-npm run verify        # 语法 + 33 测试 + Manifest
+npm run verify        # 语法 + 43 测试 + Manifest
 
 # 3. 加载到 Chrome
 #    chrome://extensions → 开发者模式 → 加载已解压 → 选择项目目录
@@ -137,7 +158,7 @@ npm run pack          # → dist/ai-prompt-optimizer-extension.zip
 | **Anthropic Claude** | `claude-sonnet-4-5` | Messages API | 0.2 | 2048 |
 | **Google Gemini** | `gemini-2.5-flash` | OpenAI-compatible | 0.2 | 4096 |
 | **DeepSeek** | `deepseek-v4-flash` | OpenAI-compatible | 0.2 | 4096 |
-| **通义千问** | `qwen3-next-80b-a3b-instruct` | DashScope-Compatible | 0.2 | 4096 |
+| **Qwen (Tongyi)** | `qwen3-next-80b-a3b-instruct` | DashScope-Compatible | 0.2 | 4096 |
 | **Kimi** | `kimi-k2.6` | Chat Completions | 0.2 | 4096 |
 
 > ⚠️ 模型 ID 以厂商后台为准。DeepSeek `deepseek-chat` / `deepseek-reasoner` 已标记弃用，调用时将收到明确提示。
@@ -185,10 +206,12 @@ npm run pack          # → dist/ai-prompt-optimizer-extension.zip
 │   ├── popup.js                # 配置读写 · Provider 切换
 │   └── popup.css               # 面板样式 · 暗色模式
 ├── shared/
+│   ├── messages.js             # English-first 消息注册表
+│   ├── optimization-goals.js   # 内置优化目标模板
 │   ├── provider-config.js      # 6 Provider 注册表
 │   ├── config-utils.js         # 配置归一化工具
 │   └── prompt-sites.js         # 40+ AI 站点白名单
-├── tests/                      # 33 条契约测试
+├── tests/                      # 43 条契约测试
 ├── icons/                      # 16/48/128 图标
 ├── docs/store-submission.md    # 商店提交材料
 ├── ARCHITECTURE.md             # 架构详解
@@ -200,7 +223,7 @@ npm run pack          # → dist/ai-prompt-optimizer-extension.zip
 ## 🧪 测试
 
 ```bash
-npm test    # 33 条契约测试，全通过
+npm test    # 43 条契约测试，全通过
 npm run check    # 所有 JS 文件语法校验
 npm run verify   # 一键全量验证
 ```

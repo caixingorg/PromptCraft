@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Added optimization goals: Better Ask, Writing & Communication, Work Plan, Research, and Custom Template.
+- Added before/after review flow before replacing page input.
+- Switched the default extension UI language to English.
+- Added shared message and optimization goal registries.
+
 ## 1.0.0
 
 - Initial Manifest V3 browser extension.

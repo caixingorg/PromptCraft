@@ -1,10 +1,20 @@
 "use strict";
 
 if (typeof importScripts === "function" && !globalThis.AIPO_PROVIDER_REGISTRY) {
-  importScripts("../shared/provider-config.js", "../shared/config-utils.js");
+  importScripts("../shared/messages.js", "../shared/provider-config.js", "../shared/optimization-goals.js", "../shared/config-utils.js");
 }
 
 const AIPO_PROVIDER_REGISTRY = globalThis.AIPO_PROVIDER_REGISTRY;
+
+function getMessage(key) {
+  return typeof globalThis.AIPO_getMessage === "function" ? globalThis.AIPO_getMessage(key) : key;
+}
+
+function formatMessage(template, replacements) {
+  return Object.keys(replacements).reduce((message, key) => {
+    return message.split(`{${key}}`).join(String(replacements[key]));
+  }, template);
+}
 
 chrome.runtime.onInstalled.addListener(() => {
   ensureDefaultConfig();
@@ -18,7 +28,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "AIPO_OPTIMIZE_PROMPT") {
     const rawPrompt = String(message.rawPrompt || "").trim();
     if (!rawPrompt) {
-      sendResponse({ ok: false, error: "请输入需要优化的 Prompt" });
+      sendResponse({ ok: false, error: getMessage("bgEmptyPrompt") });
       return true;
     }
 
@@ -27,7 +37,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ ok: true, optimizedPrompt });
       })
       .catch((error) => {
-        sendResponse({ ok: false, error: error.message || "优化失败，请稍后重试" });
+        sendResponse({ ok: false, error: error.message || getMessage("optimizeFailed") });
       });
 
     return true;
@@ -39,7 +49,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ ok: true });
       })
       .catch((error) => {
-        sendResponse({ ok: false, error: error.message || "连接测试失败" });
+        sendResponse({ ok: false, error: error.message || getMessage("connectionFailed") });
       });
 
     return true;
@@ -58,33 +68,50 @@ async function optimizePrompt(rawPrompt) {
   const sourcePrompt = String(rawPrompt || "").trim();
 
   if (!sourcePrompt) {
-    throw new Error("请输入需要优化的 Prompt");
+    throw new Error(getMessage("bgEmptyPrompt"));
   }
 
   const config = await readConfigSafely();
+  globalThis.AIPO_setLocale(config.language);
   const providerId = AIPO_PROVIDER_REGISTRY[config.selectedProvider] ? config.selectedProvider : "openai";
   const provider = AIPO_PROVIDER_REGISTRY[providerId];
   const providerConfig = config.providers[providerId] || {};
   const apiKey = String(providerConfig.apiKey || "").trim();
 
   if (!apiKey) {
-    throw new Error(`请先在插件设置中填写 ${provider.label} API Key`);
+    throw new Error(formatMessage(getMessage("bgMissingKey"), { provider: provider.label }));
   }
 
   const model = String(providerConfig.model || provider.defaultModel).trim();
 
   if (Array.isArray(provider.deprecatedModels) && provider.deprecatedModels.includes(model)) {
-    throw new Error(`您使用的模型 ${model} 已被 ${provider.label} 弃用，请在插件设置中更换为当前有效模型。`);
+    throw new Error(formatMessage(getMessage("bgDeprecatedModel"), { model, provider: provider.label }));
   }
 
-  const promptTemplate = String(config.promptTemplate || globalThis.AIPO_DEFAULT_CONFIG.promptTemplate);
-  const requestPrompt = promptTemplate.split("{原始提示词内容}").join(sourcePrompt);
+  const promptTemplate = resolvePromptTemplate(config);
+  const requestPrompt = applyPromptTemplate(promptTemplate, sourcePrompt);
 
   if (provider.adapter === "anthropic-messages") {
     return callAnthropicMessagesProvider(provider, apiKey, model, requestPrompt);
   }
 
   return callOpenAICompatibleProvider(provider, apiKey, model, requestPrompt);
+}
+
+function resolvePromptTemplate(config) {
+  if (config.optimizationGoal === "custom") {
+    return String(config.promptTemplate || globalThis.AIPO_DEFAULT_CONFIG.promptTemplate);
+  }
+
+  const goals = globalThis.AIPO_OPTIMIZATION_GOALS || {};
+  const goal = goals[config.optimizationGoal] || goals["better-ask"];
+  return goal && goal.template ? goal.template : globalThis.AIPO_DEFAULT_CONFIG.promptTemplate;
+}
+
+function applyPromptTemplate(template, sourcePrompt) {
+  return String(template)
+    .split("{originalPrompt}").join(sourcePrompt)
+    .split("{原始提示词内容}").join(sourcePrompt);
 }
 
 async function callOpenAICompatibleProvider(provider, apiKey, model, requestPrompt) {
@@ -106,23 +133,23 @@ async function callOpenAICompatibleProvider(provider, apiKey, model, requestProm
       max_tokens: provider.maxTokens || 4096
     })
   }).catch(() => {
-    throw new Error("网络请求失败，请检查网络连接");
+    throw new Error(getMessage("bgNetworkError"));
   });
 
   const data = await parseJsonResponse(response, provider.label);
 
   if (!response.ok) {
-    throw new Error(extractProviderError(data) || `${provider.label} 请求失败，HTTP ${response.status}`);
+    throw new Error(extractProviderError(data) || formatMessage(getMessage("bgRequestFailed"), { provider: provider.label, status: response.status }));
   }
 
   if (data && data.error) {
-    throw new Error(extractProviderError(data) || `${provider.label} 返回错误`);
+    throw new Error(extractProviderError(data) || formatMessage(getMessage("bgReturnedError"), { provider: provider.label }));
   }
 
   const optimizedPrompt = extractOpenAICompatibleText(data);
 
   if (!optimizedPrompt) {
-    throw new Error(`${provider.label} 返回内容为空`);
+    throw new Error(formatMessage(getMessage("bgEmptyResponse"), { provider: provider.label }));
   }
 
   return optimizedPrompt;
@@ -151,23 +178,23 @@ async function callAnthropicMessagesProvider(provider, apiKey, model, requestPro
       ]
     })
   }).catch(() => {
-    throw new Error("网络请求失败，请检查网络连接");
+    throw new Error(getMessage("bgNetworkError"));
   });
 
   const data = await parseJsonResponse(response, provider.label);
 
   if (!response.ok) {
-    throw new Error(extractProviderError(data) || `${provider.label} 请求失败，HTTP ${response.status}`);
+    throw new Error(extractProviderError(data) || formatMessage(getMessage("bgRequestFailed"), { provider: provider.label, status: response.status }));
   }
 
   if (data && data.error) {
-    throw new Error(extractProviderError(data) || `${provider.label} 返回错误`);
+    throw new Error(extractProviderError(data) || formatMessage(getMessage("bgReturnedError"), { provider: provider.label }));
   }
 
   const optimizedPrompt = extractAnthropicText(data);
 
   if (!optimizedPrompt) {
-    throw new Error(`${provider.label} 返回内容为空`);
+    throw new Error(formatMessage(getMessage("bgEmptyResponse"), { provider: provider.label }));
   }
 
   return optimizedPrompt;
@@ -202,7 +229,7 @@ async function parseJsonResponse(response, providerLabel) {
   try {
     return await response.json();
   } catch (error) {
-    throw new Error(`${providerLabel} 返回内容解析失败`);
+    throw new Error(formatMessage(getMessage("bgParseError"), { provider: providerLabel }));
   }
 }
 
@@ -231,21 +258,24 @@ async function readConfigSafely() {
     const config = await getLocalStorage(null);
     return globalThis.AIPO_normalizeConfig(config);
   } catch (error) {
-    throw new Error("读取插件配置失败");
+    throw new Error(getMessage("bgReadConfigFailed"));
   }
 }
 
 async function testConnection(providerId, apiKey, model) {
+  const config = await readConfigSafely().catch(() => globalThis.AIPO_DEFAULT_CONFIG);
+  globalThis.AIPO_setLocale(config.language);
+
   if (!providerId || !apiKey || !model) {
-    throw new Error("缺少 Provider、API Key 或模型参数");
+    throw new Error(getMessage("bgMissingConnectionParams"));
   }
 
   const provider = AIPO_PROVIDER_REGISTRY[providerId];
   if (!provider) {
-    throw new Error(`未知的 Provider: ${providerId}`);
+    throw new Error(formatMessage(getMessage("bgUnknownProvider"), { provider: providerId }));
   }
 
-  const testPrompt = "请回复 'OK'。";
+  const testPrompt = getMessage("testPrompt");
 
   if (provider.adapter === "anthropic-messages") {
     return callAnthropicMessagesProvider(provider, apiKey, model, testPrompt);

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "PromptCraft",
   "version": "1.0.0",
-  "description": "精工细作，在 AI 对话平台一键优化你的 Prompt。",
+  "description": "Optimize your prompts on AI chat platforms with one click.",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
@@ -38,6 +38,7 @@
       ],
       "js": [
         "shared/prompt-sites.js",
+        "shared/messages.js",
         "content/content.js"
       ],
       "css": [

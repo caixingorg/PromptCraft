@@ -8,6 +8,8 @@ const vm = require("node:vm");
 
 const ROOT_DIR = path.resolve(__dirname, "..");
 const BACKGROUND_FILE = path.join(ROOT_DIR, "background", "background.js");
+const SHARED_MESSAGES_FILE = path.join(ROOT_DIR, "shared", "messages.js");
+const SHARED_GOALS_FILE = path.join(ROOT_DIR, "shared", "optimization-goals.js");
 const SHARED_PROVIDER_FILE = path.join(ROOT_DIR, "shared", "provider-config.js");
 const SHARED_UTILS_FILE = path.join(ROOT_DIR, "shared", "config-utils.js");
 
@@ -39,8 +41,14 @@ function loadBackgroundTestApi(config, fetchImpl) {
 
   context.globalThis = context;
   vm.createContext(context);
+  vm.runInContext(fs.readFileSync(SHARED_MESSAGES_FILE, "utf8"), context, {
+    filename: SHARED_MESSAGES_FILE
+  });
   vm.runInContext(fs.readFileSync(SHARED_PROVIDER_FILE, "utf8"), context, {
     filename: SHARED_PROVIDER_FILE
+  });
+  vm.runInContext(fs.readFileSync(SHARED_GOALS_FILE, "utf8"), context, {
+    filename: SHARED_GOALS_FILE
   });
   vm.runInContext(fs.readFileSync(SHARED_UTILS_FILE, "utf8"), context, {
     filename: SHARED_UTILS_FILE
@@ -149,7 +157,96 @@ test("missing provider key reports provider-specific settings message", async ()
     }
   );
 
+  await assert.rejects(api.optimizePrompt("原始内容"), /Please configure your Kimi API Key/);
+});
+
+test("configured Chinese language localizes background error messages", async () => {
+  const api = loadBackgroundTestApi(
+    {
+      selectedProvider: "kimi",
+      language: "zh",
+      providers: {
+        kimi: {
+          apiKey: "",
+          model: "kimi-k2.6"
+        }
+      },
+      promptTemplate: "Custom: {originalPrompt}",
+      showFloatingButton: true
+    },
+    async () => {
+      throw new Error("fetch should not be called without API key");
+    }
+  );
+
   await assert.rejects(api.optimizePrompt("原始内容"), /请先在插件设置中填写 Kimi API Key/);
+});
+
+test("selected optimization goal template is sent to provider", async () => {
+  const calls = [];
+  const api = loadBackgroundTestApi(
+    {
+      selectedProvider: "openai",
+      optimizationGoal: "work-plan",
+      providers: {
+        openai: {
+          apiKey: "openai-key",
+          model: "gpt-5.1-mini"
+        }
+      },
+      promptTemplate: "Custom: {originalPrompt}",
+      showFloatingButton: true
+    },
+    async (url, options) => {
+      calls.push({ url, options });
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          choices: [{ message: { content: "work plan result" } }]
+        })
+      };
+    }
+  );
+
+  await api.optimizePrompt("plan launch");
+  const body = JSON.parse(calls[0].options.body);
+  assert.match(body.messages[0].content, /prompt optimizer for task planning/);
+  assert.match(body.messages[0].content, /focused, actionable work plan/);
+  assert.match(body.messages[0].content, /Do not add fiction, roleplay, or storytelling/);
+  assert.match(body.messages[0].content, /plan launch/);
+});
+
+test("legacy custom prompt template migrates to custom and replaces legacy token", async () => {
+  const calls = [];
+  const api = loadBackgroundTestApi(
+    {
+      selectedProvider: "openai",
+      providers: {
+        openai: {
+          apiKey: "openai-key",
+          model: "gpt-5.1-mini"
+        }
+      },
+      promptTemplate: "Legacy custom: {原始提示词内容}",
+      showFloatingButton: true
+    },
+    async (url, options) => {
+      calls.push({ url, options });
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          choices: [{ message: { content: "custom result" } }]
+        })
+      };
+    }
+  );
+
+  assert.equal(api.normalizeConfig({ promptTemplate: "Legacy custom: {原始提示词内容}" }).optimizationGoal, "custom");
+  await api.optimizePrompt("原始内容");
+  const body = JSON.parse(calls[0].options.body);
+  assert.equal(body.messages[0].content, "Legacy custom: 原始内容");
 });
 
 test("OpenAI-compatible request includes provider temperature and max_tokens", async () => {
@@ -237,7 +334,7 @@ test("missing or empty rawPrompt returns early without calling fetch", async () 
     }
   );
 
-  await assert.rejects(api.optimizePrompt(""), /请输入需要优化的 Prompt/);
+  await assert.rejects(api.optimizePrompt(""), /Enter a prompt to optimize/);
 });
 
 test("Anthropic request includes provider temperature", async () => {

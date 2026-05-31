@@ -11,7 +11,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Manifest-V3-blue?logo=googlechrome" alt="Manifest V3" />
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License MIT" />
-  <img src="https://img.shields.io/badge/tests-33%20pass-brightgreen" alt="33 tests pass" />
+  <img src="https://img.shields.io/badge/tests-44%20pass-brightgreen" alt="44 tests pass" />
   <img src="https://img.shields.io/badge/providers-6-purple" alt="6 Providers" />
   <img src="https://img.shields.io/badge/sites-40%2B-orange" alt="40+ AI sites" />
   <img src="https://img.shields.io/badge/dependencies-zero-success" alt="Zero dependencies" />
@@ -21,7 +21,7 @@
 
 ## 🎯 What It Does
 
-A Chrome Extension that places an **"✨ Optimize Prompt"** button beside the input field on any AI chat platform. Click it — your rough prompt gets rewritten by your own AI Provider into a polished, precise, highly actionable prompt, then written directly back into the input. No copy-paste. No tab switching.
+A Chrome Extension that places an **"✨ Optimize Prompt"** button beside the input field on any AI chat platform. Click it — your rough prompt gets rewritten by your own AI Provider into a polished, precise, highly actionable prompt, then shown in a Before / After panel so you can replace, copy, retry, or close. No copy-paste. No tab switching.
 
 ---
 
@@ -43,18 +43,38 @@ A 40+ site whitelist ensures the button appears **only** on AI chat platforms �
 </td>
 <td width="50%">
 
-### ⚡ Optimize & Write Back in Seconds
-Click → AI Optimizes → Auto-fills. Under 3 seconds, zero friction.
+### ⚡ Optimize & Review in Seconds
+Click → AI optimizes → review Before / After → replace only when ready. Under 3 seconds, zero friction.
 
 ### 🧩 Fully Customizable
 Your Prompt optimization template. Your rules. Tell the AI exactly how you want your prompts rewritten.
 
 ### 🧪 Battle-Tested
-33 automated contract tests. Zero LSP errors. Zero third-party dependencies. Plain JavaScript, HTML, and CSS — clean as a whistle.
+44 automated contract tests. Zero LSP errors. Zero third-party dependencies. Plain JavaScript, HTML, and CSS — clean as a whistle.
 
 </td>
 </tr>
 </table>
+
+---
+
+## 🧭 Optimization Goals
+
+PromptCraft now optimizes for common web-user scenarios instead of a single generic rewrite:
+
+| Goal | Best For |
+|------|----------|
+| **Better Ask** | Turning rough questions into clear, actionable AI prompts |
+| **Writing & Communication** | Emails, posts, reports, product copy, documentation, proposals, and other practical non-fiction writing |
+| **Work Plan** | Turning vague work requests into structured plans with steps and success metrics |
+| **Research** | Asking for structured analysis, comparison, risks, opportunities, and conclusions |
+| **Custom Template** | Your own reusable optimization instructions |
+
+---
+
+## 🪞 Before / After Review
+
+Optimized prompts are shown in a **Before / After** review panel before replacing your input. You can replace the original, copy the optimized prompt, retry, or close without changing anything.
 
 ---
 
@@ -67,6 +87,7 @@ Your Prompt optimization template. Your rules. Tell the AI exactly how you want 
 ├────────────────────────────────────┤
 │  [Provider Config]  [Optimize Tmpl] │  ← Tab switching
 ├────────────────────────────────────┤
+│  Optimize for: [Better Ask  ▼]     │
 │  Provider: [OpenAI         ▼]      │
 │  API Key:  [sk-···] [👁]          │
 │  Model:    [gpt-5.1-mini  ▼]      │
@@ -79,7 +100,7 @@ Your Prompt optimization template. Your rules. Tell the AI exactly how you want 
 │  └────────────────────────────┘   │
 │  [Reset Template]                  │
 ├────────────────────────────────────┤
-│           Settings saved ✓         │
+│      Before / After review first    │
 └────────────────────────────────────┘
 ```
 
@@ -97,13 +118,13 @@ User clicks button
 │              │ ◀────response─────── │  Worker      │ ◀────────────────── │              │
 │  Reads input │                      │  Reads Key   │                      │  Returns     │
 │  Shows btn   │                      │  Calls API   │                      │  optimized   │
-│  Writes back │   Key never exposed  │  No logging  │  Sent on click only  │  Pay-per-use │
+│  Review pane │   Key never exposed  │  No logging  │  Sent on click only  │  Pay-per-use │
 └─────────────┘                      └─────────────┘                      └──────────────┘
       │
       │  storage.onChanged
       ▼
 ┌─────────────┐
-│  Popup       │  ← Settings: Provider / API Key / Model / Template / Toggles
+│  Popup       │  ← Settings: Goal / Provider / API Key / Model / Template
 │  Panel       │
 └─────────────┘
 ```
@@ -118,7 +139,7 @@ git clone https://github.com/your-username/ai-prompt-optimizer.git
 cd ai-prompt-optimizer
 
 # 2. Verify
-npm run verify        # Syntax + 33 tests + Manifest validation
+npm run verify        # Syntax + 44 tests + Manifest validation
 
 # 3. Load in Chrome
 #    chrome://extensions → Developer mode → Load unpacked → select project directory
@@ -185,10 +206,12 @@ We do **not** request: `activeTab` / `tabs` / `history` / `cookies` / `webReques
 │   ├── popup.js                # Config read/write · Provider switching
 │   └── popup.css               # Panel styles · dark mode
 ├── shared/
+│   ├── messages.js             # English-first message registry
+│   ├── optimization-goals.js   # Built-in optimization goal templates
 │   ├── provider-config.js      # 6-Provider registry
 │   ├── config-utils.js         # Configuration normalization
 │   └── prompt-sites.js         # 40+ AI site whitelist
-├── tests/                      # 33 contract tests
+├── tests/                      # 44 contract tests
 ├── icons/                      # 16/48/128 icons
 ├── docs/store-submission.md    # Store submission notes
 ├── ARCHITECTURE.md             # Architecture deep dive
@@ -200,7 +223,7 @@ We do **not** request: `activeTab` / `tabs` / `history` / `cookies` / `webReques
 ## 🧪 Testing
 
 ```bash
-npm test          # 33 contract tests — all passing
+npm test          # 44 contract tests — all passing
 npm run check     # Syntax validation for all JS files
 npm run verify    # Full one-shot verification
 ```

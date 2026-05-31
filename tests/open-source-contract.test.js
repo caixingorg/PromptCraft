@@ -21,7 +21,10 @@ test("manifest uses minimum declared permissions for release", () => {
   assert.deepEqual(manifest.permissions, ["storage"]);
   assert.equal(manifest.content_scripts[0].matches[0], "<all_urls>");
   assert.equal(manifest.content_scripts[0].all_frames, true);
+  assert.ok(manifest.content_scripts[0].js.includes("shared/messages.js"));
+  assert.ok(!manifest.content_scripts[0].js.includes("shared/optimization-goals.js"));
   assert.ok(manifest.host_permissions.includes("https://api.openai.com/*"));
+  assert.match(manifest.description, /Optimize your prompts/);
 });
 
 test("open-source release files document privacy, security, and packaging", () => {
@@ -48,6 +51,8 @@ test("open-source release files document privacy, security, and packaging", () =
   assert.match(read("README.md"), /Permissions/);
   assert.match(read("README_CN.md"), /权限说明/);
   assert.match(read("docs/store-submission.md"), /Single purpose/);
+  assert.match(read("shared/messages.js"), /Optimize Prompt/);
+  assert.match(read("shared/optimization-goals.js"), /better-ask/);
 });
 
 test("new documentation and engineering files exist", () => {
@@ -61,6 +66,17 @@ test("ARCHITECTURE.md documents data flow and message types", () => {
   assert.match(architectureMd, /AIPO_OPTIMIZE_PROMPT/);
   assert.match(architectureMd, /AIPO_TEST_CONNECTION|TEST_CONNECTION/);
   assert.match(architectureMd, /Content Script|Background/);
+  assert.match(architectureMd, /optimization-goals\.js/);
+  assert.match(architectureMd, /messages\.js/);
+  assert.match(architectureMd, /review panel/i);
+});
+
+test("README documents P0 prompt workspace features", () => {
+  const readme = read("README.md");
+  assert.match(readme, /Optimization Goals/);
+  assert.match(readme, /Before \/ After/);
+  assert.match(readme, /Better Ask/);
+  assert.match(readme, /Writing & Communication/);
 });
 
 test("package.json declares Node >=18", () => {

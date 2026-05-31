@@ -41,14 +41,14 @@
       endpoint: "https://api.deepseek.com/chat/completions",
       defaultModel: "deepseek-v4-flash",
       models: ["deepseek-v4-flash", "deepseek-chat", "deepseek-reasoner"],
-      modelNote: "deepseek-chat / deepseek-reasoner 为兼容预设，官方文档称将于 2026-07-24 弃用。",
+      modelNote: "deepseek-chat / deepseek-reasoner are compatibility presets and are marked for deprecation by the provider.",
       keyPlaceholder: "sk-...",
       temperature: 0.2,
       maxTokens: 4096,
       deprecatedModels: ["deepseek-chat", "deepseek-reasoner"]
     },
     qwen: {
-      label: "通义千问",
+      label: "Qwen (Tongyi)",
       adapter: "openai-compatible",
       endpoint: "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
       defaultModel: "qwen3-next-80b-a3b-instruct",
