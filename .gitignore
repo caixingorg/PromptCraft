@@ -2,6 +2,8 @@
 *.log
 *.tmp
 
+.github/
+
 .omx/
 .omo/
 .playwright-mcp/
