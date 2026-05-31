@@ -3,10 +3,14 @@
 *.tmp
 
 .omx/
+.omo/
 .playwright-mcp/
 
 dist/
 *.zip
+
+docs/screenshots/
+docs/plans/
 
 node_modules/
 coverage/
