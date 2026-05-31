@@ -45,7 +45,8 @@ test("open-source release files document privacy, security, and packaging", () =
   assert.match(read("PRIVACY.md"), /chrome\.storage\.local/);
   assert.match(read("PRIVACY.md"), /不会自动发送网页输入内容/);
   assert.match(read("SECURITY.md"), /不要在 issue/);
-  assert.match(read("README.md"), /权限说明/);
+  assert.match(read("README.md"), /Permissions/);
+  assert.match(read("README_CN.md"), /权限说明/);
   assert.match(read("docs/store-submission.md"), /Single purpose/);
 });
 

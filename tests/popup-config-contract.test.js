@@ -43,8 +43,8 @@ test("provider defaults and presets use updated editable model IDs", () => {
   assert.match(sharedProviderConfig, /defaultModel: "gpt-5\.1-mini"/);
   assert.match(sharedProviderConfig, /defaultModel: "deepseek-v4-flash"/);
   assert.match(sharedProviderConfig, /defaultModel: "qwen3-next-80b-a3b-instruct"/);
-  assert.match(readme, /模型 ID 以厂商后台为准/);
-  assert.match(readme, /手动填写有效模型 ID/);
+  assert.match(readme, /Model IDs are subject to change by providers/);
+  assert.match(readme, /manually enter a valid model ID/);
 });
 
 test("popup exposes current-site disable control without reading tab URL", () => {

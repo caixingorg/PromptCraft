@@ -5,7 +5,7 @@
 <h1 align="center">PromptCraft</h1>
 
 <p align="center">
-  <strong>智能 Prompt 优化助手 · 精工细作，让你的提示词提升 10 倍</strong>
+  <strong>One Click. Better Prompts. Instantly.</strong>
 </p>
 
 <p align="center">
@@ -19,38 +19,38 @@
 
 ---
 
-## 🎯 一句话描述
+## 🎯 What It Does
 
-在任何 AI 对话平台的输入框旁，一键将你粗糙的 Prompt 优化为专业、精准、高可执行性的提示词。
+A Chrome Extension that places an **"✨ Optimize Prompt"** button beside the input field on any AI chat platform. Click it — your rough prompt gets rewritten by your own AI Provider into a polished, precise, highly actionable prompt, then written directly back into the input. No copy-paste. No tab switching.
 
 ---
 
-## ✨ 为什么选择 PromptCraft？
+## ✨ Why PromptCraft?
 
 <table>
 <tr>
 <td width="50%">
 
-### 🔐 你的 Key，你做主
-**BYOK（Bring Your Own Key）** 架构。API Key 仅存本地浏览器，不经过任何第三方服务器。零遥测、零追踪、零远程脚本。
+### 🔐 Your Key, Your Rules
+**BYOK (Bring Your Own Key)** architecture. API Keys live in `chrome.storage.local` — never touching a third-party server. Zero telemetry. Zero tracking. Zero remote scripts.
 
-### 🎛 六大 Provider
-OpenAI · Claude · Gemini · DeepSeek · 通义千问 · Kimi — 一个插件，覆盖主流 AI 平台。
+### 🎛 Six Providers, One Extension
+OpenAI · Claude · Gemini · DeepSeek · Qwen · Kimi. Choose your model. Switch anytime.
 
-### 🎯 精准投放
-40+ AI 站点白名单，只在 ChatGPT、Claude、Kimi 等对话平台显示按钮。博客评论区、登录表单、搜索引擎 — **绝不出现在不该出现的地方**。
+### 🎯 Precision Targeting
+A 40+ site whitelist ensures the button appears **only** on AI chat platforms — ChatGPT, Claude, Gemini, DeepSeek, Kimi, Copilot, Poe, Perplexity, and more. Blog comment sections, login forms, and search boxes stay clean.
 
 </td>
 <td width="50%">
 
-### ⚡ 一键优化，即时回填
-点击「✨ 优化提示词」→ AI 优化 → 自动写回输入框。不过 3 秒，无需复制粘贴。
+### ⚡ Optimize & Write Back in Seconds
+Click → AI Optimizes → Auto-fills. Under 3 seconds, zero friction.
 
-### 🧩 完全自定义
-Prompt 优化模板自由编辑。想让 AI 怎么优化你的提示词？你说了算。
+### 🧩 Fully Customizable
+Your Prompt optimization template. Your rules. Tell the AI exactly how you want your prompts rewritten.
 
-### 🧪 测试即上线
-33 条自动化测试、零 LSP 错误、无第三方依赖。原生 JavaScript / HTML / CSS，代码干净如初雪。
+### 🧪 Battle-Tested
+33 automated contract tests. Zero LSP errors. Zero third-party dependencies. Plain JavaScript, HTML, and CSS — clean as a whistle.
 
 </td>
 </tr>
@@ -58,164 +58,164 @@ Prompt 优化模板自由编辑。想让 AI 怎么优化你的提示词？你说
 
 ---
 
-## 📸 预览
+## 📸 Preview
 
 ```
 ┌────────────────────────────────────┐
-│  PromptCraft        [保存] │
-│  ⬜ 显示悬浮按钮  ⬜ 当前网站隐藏   │
+│  PromptCraft        [Save] │
+│  ⬜ Show Button     ⬜ Hide on Site  │
 ├────────────────────────────────────┤
-│  [Provider 配置]  [优化模板]       │  ← Tab 切换
+│  [Provider Config]  [Optimize Tmpl] │  ← Tab switching
 ├────────────────────────────────────┤
-│  Provider: [OpenAI       ▼]        │
+│  Provider: [OpenAI         ▼]      │
 │  API Key:  [sk-···] [👁]          │
-│  模型:     [gpt-5.1-mini ▼]       │
-│  [测试连接]  连接正常 ✓            │
+│  Model:    [gpt-5.1-mini  ▼]      │
+│  [Test Connection]  Connected ✓    │
 │                                    │
-│  或切换到「优化模板」编辑：         │
+│  Or switch to Template tab:        │
 │  ┌────────────────────────────┐   │
-│  │ 你是专业的提示词工程师···    │   │
-│  │ {原始提示词内容}            │   │
+│  │ You are a professional···   │   │
+│  │ {original prompt content}   │   │
 │  └────────────────────────────┘   │
-│  [恢复模板]                        │
+│  [Reset Template]                  │
 ├────────────────────────────────────┤
-│              配置已保存 ✓          │
+│           Settings saved ✓         │
 └────────────────────────────────────┘
 ```
 
 ---
 
-## 🏗 架构
+## 🏗 Architecture
 
 ```
-用户点击按钮
+User clicks button
       │
       ▼
 ┌─────────────┐    chrome.runtime     ┌─────────────┐    HTTPS (Bearer)    ┌──────────────┐
 │  Content     │ ──sendMessage──────▶ │  Background  │ ──────────────────▶ │  AI Provider │
 │  Script      │                      │  Service     │                      │  API         │
 │              │ ◀────response─────── │  Worker      │ ◀────────────────── │              │
-│  读取输入框   │                      │  读取 Key     │                      │  返回优化文本  │
-│  显示按钮     │                      │  调用 API     │                      │              │
-│  回填结果     │   API Key 不可见     │  不写日志     │  仅用户点击后发送    │  按量计费     │
+│  Reads input │                      │  Reads Key   │                      │  Returns     │
+│  Shows btn   │                      │  Calls API   │                      │  optimized   │
+│  Writes back │   Key never exposed  │  No logging  │  Sent on click only  │  Pay-per-use │
 └─────────────┘                      └─────────────┘                      └──────────────┘
       │
       │  storage.onChanged
       ▼
 ┌─────────────┐
-│  Popup       │  ← 配置面板：Provider / API Key / 模型 / 模板 / 开关
+│  Popup       │  ← Settings: Provider / API Key / Model / Template / Toggles
 │  Panel       │
 └─────────────┘
 ```
 
 ---
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
 ```bash
-# 1. 克隆
+# 1. Clone
 git clone https://github.com/your-username/ai-prompt-optimizer.git
 cd ai-prompt-optimizer
 
-# 2. 验证
-npm run verify        # 语法 + 33 测试 + Manifest
+# 2. Verify
+npm run verify        # Syntax + 33 tests + Manifest validation
 
-# 3. 加载到 Chrome
-#    chrome://extensions → 开发者模式 → 加载已解压 → 选择项目目录
+# 3. Load in Chrome
+#    chrome://extensions → Developer mode → Load unpacked → select project directory
 
-# 4. 打包
+# 4. Package for distribution
 npm run pack          # → dist/ai-prompt-optimizer-extension.zip
 ```
 
 ---
 
-## 🔌 Provider 支持矩阵
+## 🔌 Provider Support Matrix
 
-| Provider | 默认模型 | 接口类型 | Temperature | Max Tokens |
-|----------|---------|---------|:-----------:|:----------:|
+| Provider | Default Model | API Type | Temp | Max Tokens |
+|----------|--------------|---------|:----:|:----------:|
 | **OpenAI** | `gpt-5.1-mini` | Chat Completions | 0.2 | 4096 |
 | **Anthropic Claude** | `claude-sonnet-4-5` | Messages API | 0.2 | 2048 |
 | **Google Gemini** | `gemini-2.5-flash` | OpenAI-compatible | 0.2 | 4096 |
 | **DeepSeek** | `deepseek-v4-flash` | OpenAI-compatible | 0.2 | 4096 |
-| **通义千问** | `qwen3-next-80b-a3b-instruct` | DashScope-Compatible | 0.2 | 4096 |
+| **Qwen (Tongyi)** | `qwen3-next-80b-a3b-instruct` | DashScope-Compatible | 0.2 | 4096 |
 | **Kimi** | `kimi-k2.6` | Chat Completions | 0.2 | 4096 |
 
-> ⚠️ 模型 ID 以厂商后台为准。DeepSeek `deepseek-chat` / `deepseek-reasoner` 已标记弃用，调用时将收到明确提示。
+> ⚠️ Model IDs are subject to change by providers. DeepSeek `deepseek-chat` / `deepseek-reasoner` are marked deprecated — you'll receive a clear notice if using them.
 
 ---
 
-## 🛡 隐私承诺
+## 🛡 Privacy Commitments
 
-| 我们做的事 | 我们不做的事 |
-|-----------|------------|
-| ✅ Key 仅存 `chrome.storage.local` | ❌ 不上传 Key 到任何服务器 |
-| ✅ 仅在用户点击后发送文本 | ❌ 不自动读取输入框 |
-| ✅ 文本仅发送给用户选择的 Provider | ❌ 不发送给其他服务 |
-| ✅ 卸载自动清除所有数据 | ❌ 不收集浏览历史 |
-| ✅ Content Script 不接触 Key | ❌ 不加载远程脚本 |
+| We Do | We Don't |
+|-------|----------|
+| ✅ Store Keys locally in `chrome.storage.local` | ❌ Upload Keys to any server |
+| ✅ Send text only on explicit user click | ❌ Auto-read input fields |
+| ✅ Send text only to the user-chosen Provider | ❌ Send to any other service |
+| ✅ Auto-clear all data on uninstall | ❌ Collect browsing history |
+| ✅ Keep Content Script blind to API Keys | ❌ Load remote scripts |
 
-完整隐私政策：[PRIVACY.md](./PRIVACY.md)
-
----
-
-## 📋 权限说明
-
-| 权限 | 为什么需要 |
-|------|-----------|
-| `storage` | 本地保存你的 API Key、模型名、模板和设置 |
-| `<all_urls>` | 在 40+ AI 对话网站中显示优化按钮 |
-| `all_frames` | 支持 iframe 内的输入框 |
-| 6 个 Provider `host_permissions` | 允许直接调用你选择的 AI API |
-
-不申请：`activeTab` / `tabs` / `history` / `cookies` / `webRequest` / `scripting`
+Full privacy policy: [PRIVACY.md](./PRIVACY.md)
 
 ---
 
-## 📂 项目结构
+## 📋 Permissions
+
+| Permission | Why |
+|-----------|-----|
+| `storage` | Store your API Keys, model names, templates, and settings locally |
+| `<all_urls>` | Show the optimize button on 40+ AI chat websites |
+| `all_frames` | Support input fields inside iframes |
+| 6× Provider `host_permissions` | Allow direct calls to your chosen AI Provider |
+
+We do **not** request: `activeTab` / `tabs` / `history` / `cookies` / `webRequest` / `scripting`
+
+---
+
+## 📂 Project Structure
 
 ```text
 .
-├── manifest.json               # MV3 入口
-├── background/background.js    # Service Worker · 消息路由 · API 调用
+├── manifest.json               # MV3 entry point
+├── background/background.js    # Service Worker · message routing · API calls
 ├── content/
-│   ├── content.js              # 输入框发现 · 按钮绑定 · 回填 · 白名单门控
-│   └── content.css             # 按钮 & Toast 样式
+│   ├── content.js              # Input detection · button binding · write-back · whitelist
+│   └── content.css             # Button & toast styles
 ├── popup/
-│   ├── popup.html              # Tab 化配置面板
-│   ├── popup.js                # 配置读写 · Provider 切换
-│   └── popup.css               # 面板样式 · 暗色模式
+│   ├── popup.html              # Tabbed settings panel
+│   ├── popup.js                # Config read/write · Provider switching
+│   └── popup.css               # Panel styles · dark mode
 ├── shared/
-│   ├── provider-config.js      # 6 Provider 注册表
-│   ├── config-utils.js         # 配置归一化工具
-│   └── prompt-sites.js         # 40+ AI 站点白名单
-├── tests/                      # 33 条契约测试
-├── icons/                      # 16/48/128 图标
-├── docs/store-submission.md    # 商店提交材料
-├── ARCHITECTURE.md             # 架构详解
-└── PRIVACY.md / SECURITY.md    # 隐私 & 安全
+│   ├── provider-config.js      # 6-Provider registry
+│   ├── config-utils.js         # Configuration normalization
+│   └── prompt-sites.js         # 40+ AI site whitelist
+├── tests/                      # 33 contract tests
+├── icons/                      # 16/48/128 icons
+├── docs/store-submission.md    # Store submission notes
+├── ARCHITECTURE.md             # Architecture deep dive
+└── PRIVACY.md / SECURITY.md    # Privacy & security policies
 ```
 
 ---
 
-## 🧪 测试
+## 🧪 Testing
 
 ```bash
-npm test    # 33 条契约测试，全通过
-npm run check    # 所有 JS 文件语法校验
-npm run verify   # 一键全量验证
+npm test          # 33 contract tests — all passing
+npm run check     # Syntax validation for all JS files
+npm run verify    # Full one-shot verification
 ```
 
 ---
 
-## ⚠️ 已知限制
+## ⚠️ Known Limitations
 
-- 按钮使用 `position: fixed`，在 CSS `transform` 容器或复杂 iframe 中可能定位偏移
-- Shadow DOM、跨域 iframe、严格 CSP 可能阻止按钮显示
-- 模型预设非实时目录，调用失败时手动填写有效模型 ID
-- 使用 Provider API 会产生你账户下的调用费用
+- Button uses `position: fixed` — may misalign inside CSS `transform` containers or complex iframes
+- Shadow DOM, cross-origin iframes, and restrictive CSP may block button rendering
+- Model presets are not a live catalog — manually enter a valid model ID if calls fail
+- Provider API usage incurs charges on your own account
 
 ---
 
-## 📄 许可
+## 📄 License
 
 MIT License · [LICENSE](./LICENSE)
