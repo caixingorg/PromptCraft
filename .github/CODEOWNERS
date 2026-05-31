@@ -1,0 +1,6 @@
+# Core infrastructure — requires maintainer review
+manifest.json
+background/          @maintainer
+shared/              @maintainer
+PRIVACY.md           @maintainer
+SECURITY.md          @maintainer

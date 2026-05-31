@@ -1,0 +1,17 @@
+{
+  "name": "promptcraft-extension",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PromptCraft — Manifest V3 browser extension. One-click prompt optimization on 40+ AI chat platforms. BYOK.",
+  "scripts": {
+    "test": "node --test tests/content-button-contract.test.js tests/popup-config-contract.test.js tests/provider-adapters.test.js tests/open-source-contract.test.js",
+    "check": "node --check content/content.js && node --check popup/popup.js && node --check background/background.js && node --check shared/provider-config.js && node --check scripts/pack-extension.js",
+    "validate:manifest": "python3 -m json.tool manifest.json > /dev/null",
+    "verify": "npm run check && npm test && npm run validate:manifest",
+    "pack": "node scripts/pack-extension.js"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}
